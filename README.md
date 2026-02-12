@@ -46,20 +46,3 @@ The application consists of 5 microservices working together:
 * AWS Account & CLI configured.
 * `kubectl`, `eksctl`, and `docker` installed.
 * Docker Hub Account.
-
-### Step 1: Provision Infrastructure
-We first launch an EC2 instance to act as our "Management Server" (Jenkins Master), and then provision the EKS Cluster.
-
-**1. Launch Jenkins Server (EC2)**
-* **AMI:** Ubuntu 24.04 LTS
-* **Instance Type:** `t3.large` (Required for Jenkins + Docker)
-* **Security Group:** Allow ports `22` (SSH) and `8080` (Jenkins)
-
-**2. Create EKS Cluster**
-SSH into your EC2 instance and run:
-```bash
-# Create Cluster (Takes ~15 mins)
-eksctl create cluster --name demo-cluster --region us-east-1 --node-type t3.medium --nodes 2
-
-# Update local kubeconfig to talk to the cluster
-aws eks update-kubeconfig --region us-east-1 --name demo-cluster
