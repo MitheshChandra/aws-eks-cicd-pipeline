@@ -1,66 +1,65 @@
-# Example Voting App
+# 🚀 End-to-End CI/CD Pipeline on AWS EKS
 
-A simple distributed application running across multiple Docker containers.
+![Jenkins](https://img.shields.io/badge/Jenkins-D24939?style=for-the-badge&logo=jenkins&logoColor=white)
+![Kubernetes](https://img.shields.io/badge/Kubernetes-326CE5?style=for-the-badge&logo=kubernetes&logoColor=white)
+![Docker](https://img.shields.io/badge/Docker-2496ED?style=for-the-badge&logo=docker&logoColor=white)
+![AWS](https://img.shields.io/badge/AWS-232F3E?style=for-the-badge&logo=amazon-aws&logoColor=white)
+![Python](https://img.shields.io/badge/Python-3776AB?style=for-the-badge&logo=python&logoColor=white)
+![Nodejs](https://img.shields.io/badge/Node.js-339933?style=for-the-badge&logo=nodedotjs&logoColor=white)
 
-## Getting started
+## 📌 Project Overview
+This project implements a production-grade CI/CD pipeline that automates the deployment of a **Polyglot Microservices Application** (The "Example Voting App").
 
-Download [Docker Desktop](https://www.docker.com/products/docker-desktop) for Mac or Windows. [Docker Compose](https://docs.docker.com/compose) will be automatically installed. On Linux, make sure you have the latest version of [Compose](https://docs.docker.com/compose/install/).
+The pipeline is triggered by GitHub commits, builds Docker images, pushes them to **Docker Hub**, and orchestrates a zero-downtime deployment to an **Amazon EKS (Elastic Kubernetes Service)** cluster using **Jenkins**.
 
-This solution uses Python, Node.js, .NET, with Redis for messaging and Postgres for storage.
+---
 
-Run in this directory to build and run the app:
-HI
-```shell
-docker compose up
-```
+## 🏗️ DevOps Architecture
+[Insert a Screenshot of your Jenkins Pipeline Diagram here]
 
-The `vote` app will be running at [http://localhost:8080](http://localhost:8080), and the `results` will be at [http://localhost:8081](http://localhost:8081).
+The CI/CD flow:
+1.  **Code Commit:** Developer pushes code to GitHub `main` branch.
+2.  **Trigger:** GitHub Webhook triggers the Jenkins Pipeline.
+3.  **Build:** Jenkins builds Docker images for the modified microservices.
+4.  **Push:** Images are tagged with the Build ID and pushed to Docker Hub.
+5.  **Deploy:** Jenkins runs `kubectl` commands to update the EKS deployment.
+6.  **Verify:** The application is exposed via a Kubernetes LoadBalancer.
 
-Alternately, if you want to run it on a [Docker Swarm](https://docs.docker.com/engine/swarm/), first make sure you have a swarm. If you don't, run:
+---
 
-```shell
-docker swarm init
-```
+## 🧩 Application Architecture
+The application consists of 5 microservices working together:
 
-Once you have your swarm, in this directory run:
+| Service | Language | Description |
+| :--- | :--- | :--- |
+| **Vote-App** | Python | Frontend web app to cast votes. |
+| **Result-App** | Node.js | Frontend web app to view results. |
+| **Worker** | .NET | Background worker that processes votes. |
+| **Redis** | Redis | In-memory queue for incoming votes. |
+| **Database** | PostgreSQL | Persistent storage for processed votes. |
 
-```shell
-docker stack deploy --compose-file docker-stack.yml vote
-```
+---
 
-## Run the app in Kubernetes
+## 🚀 How to Run This Project
 
-The folder k8s-specifications contains the YAML specifications of the Voting App's services.
+### Prerequisites
+* AWS Account & CLI configured.
+* `kubectl`, `eksctl`, and `docker` installed.
+* Docker Hub Account.
 
-Run the following command to create the deployments and services. Note it will create these resources in your current namespace (`default` if you haven't changed it.)
+### Step 1: Provision Infrastructure
+We first launch an EC2 instance to act as our "Management Server" (Jenkins Master), and then provision the EKS Cluster.
 
-```shell
-kubectl create -f k8s-specifications/
-```
+**1. Launch Jenkins Server (EC2)**
+* **AMI:** Ubuntu 24.04 LTS
+* **Instance Type:** `t3.large` (Required for Jenkins + Docker)
+* **Security Group:** Allow ports `22` (SSH) and `8080` (Jenkins)
 
-The `vote` web app is then available on port 31000 on each host of the cluster, the `result` web app is available on port 31001.
+**2. Create EKS Cluster**
+SSH into your EC2 instance and run:
+```bash
+# Create Cluster (Takes ~15 mins)
+eksctl create cluster --name demo-cluster --region us-east-1 --node-type t3.medium --nodes 2
 
-To remove them, run:
-
-```shell
-kubectl delete -f k8s-specifications/
-```
-
-## Architecture
-
-![Architecture diagram](architecture.excalidraw.png)
-
-* A front-end web app in [Python](/vote) which lets you vote between two options
-* A [Redis](https://hub.docker.com/_/redis/) which collects new votes
-* A [.NET](/worker/) worker which consumes votes and stores them in…
-* A [Postgres](https://hub.docker.com/_/postgres/) database backed by a Docker volume
-* A [Node.js](/result) web app which shows the results of the voting in real time
-
-## Notes
-
-The voting application only accepts one vote per client browser. It does not register additional votes if a vote has already been submitted from a client.
-
-This isn't an example of a properly architected perfectly designed distributed app... it's just a simple
-example of the various types of pieces and languages you might see (queues, persistent data, etc), and how to
-deal with them in Docker at a basic level.
-Sample Java Application
+# Update local kubeconfig to talk to the cluster
+aws eks update-kubeconfig --region us-east-1 --name demo-cluster
