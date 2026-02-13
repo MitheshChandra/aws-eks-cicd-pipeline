@@ -2,59 +2,58 @@ pipeline {
     agent any
 
     environment {
-        DOCKERHUB_CREDENTIALS = credentials('dockerhub')  // Stored in Jenkins
-        DOCKER_IMAGE = "prateekdocker/new-po:${BUILD_NUMBER}"
+        // Your Docker Hub Credentials ID from Jenkins
+        DOCKERHUB_CREDENTIALS = credentials('docker-hub-credentials')
+        
+        // YOUR Docker Hub Username 
+        DOCKER_IMAGE = "kmithesh/voting-app" 
+        
+        // K8s Context Name (We set this earlier)
+        K8S_CONTEXT = "Net-pole-demo"
     }
 
     stages {
-        stage('Clone Repository') {
+        stage('Checkout Code') {
             steps {
-                git url: 'https://github.com/prateekniet/azure-demo-cicd.git',branch: 'main'
+                checkout scm
             }
         }
 
         stage('Build Docker Image') {
             steps {
-                sh """
-                  cd vote
-                  docker build -t ${DOCKER_IMAGE} .
-                """
+                script {
+                    // Build the image using the build number as a tag
+                    sh "docker build -t $DOCKER_IMAGE:${env.BUILD_NUMBER} ."
+                }
             }
         }
 
-        stage('DockerHub Login & Push') {
+        stage('Login to Docker Hub') {
             steps {
-                sh """
-                  echo ${DOCKERHUB_CREDENTIALS_PSW} | docker login -u ${DOCKERHUB_CREDENTIALS_USR} --password-stdin
-                  docker push ${DOCKER_IMAGE}
-                """
+                sh 'echo $DOCKERHUB_CREDENTIALS_PSW | docker login -u $DOCKERHUB_CREDENTIALS_USR --password-stdin'
             }
         }
 
-        stage('Deploy to Kind Cluster') {
+        stage('Push to Docker Hub') {
             steps {
-                sh """
-                  # Make sure kubectl is configured to point to kind cluster
-                  kubectl config use-context kind-netpol-demo
-
-                  # Update image in deployment.yaml (optional)
-                  # For simplicity, let's patch the image directly
-                  kubectl set image deployment/vote vote-demo=${DOCKER_IMAGE} --record || \
-                  kubectl apply -f k8s-specifications/vote-deployment.yaml
-                  kubectl apply -f k8s-specifications/vote-service.yaml
-
-                  kubectl rollout status deployment/vote
-                """
+                sh "docker push $DOCKER_IMAGE:${env.BUILD_NUMBER}"
             }
         }
-    }
 
-    post {
-        success {
-            echo "Deployment successful! 🎉"
-        }
-        failure {
-            echo "Pipeline failed. Check logs."
+        stage('Deploy to Kubernetes') {
+            steps {
+                script {
+                    // Switch to the correct context
+                    sh "kubectl config use-context $K8S_CONTEXT"
+                    
+                    // Update the deployment with the new image
+                    // ASSUMPTION: You have a deployment named 'voting-app'
+                    sh "kubectl set image deployment/voting-app voting-app=$DOCKER_IMAGE:${env.BUILD_NUMBER}"
+                    
+                    // Verify rollout status
+                    sh "kubectl rollout status deployment/voting-app"
+                }
+            }
         }
     }
 }
