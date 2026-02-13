@@ -31,7 +31,7 @@ The application consists of 5 microservices working together:
 
 | Service | Language | Description |
 | :--- | :--- | :--- |
-| **Vote-App** | Python | Frontend web app to cast votes.|
+| **Vote-App** | Python | Frontend web app to cast votes. |
 | **Result-App** | Node.js | Frontend web app to view results. |
 | **Worker** | .NET | Background worker that processes votes. |
 | **Redis** | Redis | In-memory queue for incoming votes. |
