@@ -15,7 +15,6 @@ The pipeline is triggered by GitHub commits, builds Docker images, pushes them t
 ---
 
 ## 🏗️ DevOps Architecture
-[Insert a Screenshot of your Jenkins Pipeline Diagram here]
 
 The CI/CD flow:
 1.  **Code Commit:** Developer pushes code to GitHub `main` branch.
